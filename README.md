@@ -20,3 +20,8 @@ Then finally, cd into the directory
 ## Usage
 
 `go run clone.go`
+
+```
+  -e    Add another file with exact locations to Git repositories (useful for repositories not on GitHub)
+  -v    Display version
+```
