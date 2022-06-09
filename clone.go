@@ -18,19 +18,28 @@ func Reader() string { // Function for collecting user input easier as a string
 	return scanner.Text()
 }
 
-func command_generator(line string, protocol string, destination string) string { // Function for generating the command for each repo
-	if protocol == "2" || protocol == "SSH" || protocol == "ssh" {
-		return "cd " + destination + " && git clone git@github.com:" + line
+func command_generator(line string, protocol string, destination string, option int) string { // Function for generating the command for each repo
+	if option == 0 {
+		if protocol == "2" || protocol == "SSH" || protocol == "ssh" {
+			return "cd " + destination + " && git clone git@github.com:" + line
+		} else {
+			return "cd " + destination + " && git clone https://github.com/" + line
+		}
 	} else {
-		return "cd " + destination + " && git clone https://github.com/" + line
+		return "cd " + destination + " && git clone " + line
 	}
 }
+
 func main() {
+	external_flag := flag.Bool("e", false, "Add another file with exact locations to Git repositories (useful for repositories not on GitHub)")
+
 	version_flag := flag.Bool("v", false, "Display version")
 	if *version_flag {
-		fmt.Println("Clone-repo-tool version:", VERSION)
+		fmt.Println("Clone-repo-tool version: ", VERSION)
 		os.Exit(0)
 	}
+	flag.Parse()
+
 	fmt.Println("Please enter the location of the slug file (exact location from root)")
 	source := Reader() // Receive user input for the location of the slug file
 
@@ -49,13 +58,34 @@ func main() {
 
 	slugs := strings.Split(string(slugfile), "\n") // Makes slices of each line
 	for _, line := range slugs {
-		command_string := command_generator(line, protocol, destination) // Use the function to generate the command
-		cmd := exec.Command(`bash`, `-c`, command_string)                // Define the command
+		command_string := command_generator(line, protocol, destination, 0) // Use the function to generate the command
+		cmd := exec.Command(`bash`, `-c`, command_string)                   // Define the command
 
 		cmd.Stderr = os.Stderr
 		cmd.Stdout = os.Stdout
 		cmd.Stdin = os.Stdin
 		cmd.Run() // Execute the command
+	}
+
+	if *external_flag {
+		fmt.Println("Enter the location of the external repos file (exact location from root")
+		externalsource := Reader()
+		externalfile, err := ioutil.ReadFile(externalsource)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		repos := strings.Split(string(externalfile), "\n")
+		for _, line := range repos {
+			command_string := command_generator(line, protocol, destination, 1)
+			cmd := exec.Command(`bash`, `-c`, command_string) // Define the command
+
+			cmd.Stderr = os.Stderr
+			cmd.Stdout = os.Stdout
+			cmd.Stdin = os.Stdin
+			cmd.Run() // Execute the command
+
+		}
 	}
 
 }
